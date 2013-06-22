@@ -1,5 +1,7 @@
+require 'debugger'
+
 class Hangman
-	attr_accessor :word_state, :guess
+	attr_accessor :word_state, :guess, :player1, :player2, :word
 
 	def initialize
 		@guess = nil
@@ -8,36 +10,70 @@ class Hangman
 
 		# Player 1 is ALWAYS hangman
 		# Player 2 is ALWAYS guesser
-		if @game_type == 0
-			player1 = HumanPlayer.new
-			player2 = HumanPlayer.new
+		if @game_type == 2
+			@player1 = HumanPlayer.new
+			@player2 = HumanPlayer.new
 		elsif @game_type == 1
 			print "Who should be the hangman, computer or human? "
 			hanger = gets.chomp
 			if hanger == "human"
-				player1 = HumanPlayer.new
-				player2 = ComputerPlayer.new
+				@player1 = HumanPlayer.new
+				@player2 = ComputerPlayer.new
 			else
-				player1 == ComputerPlayer.new
-				player2 == HumanPlayer.new
+				@player1 = ComputerPlayer.new
+				@player2 = HumanPlayer.new
 			end
-		elsif @game_type == 2
-			player1 = ComputerPlayer.new
-			player2 = ComputerPlayer.new
+		elsif @game_type == 0
+			@player1 = ComputerPlayer.new
+			@player2 = ComputerPlayer.new
 		end
+
+		start_game(player1, player2)
 	end
 
-	def play_game
-		if player1.is_a? HumanPlayer
+	def start_game(player1, player2)
+		if player1.is_a?(HumanPlayer) && player2.is_a?(HumanPlayer)
 			word_length = player1.set_word_length
 			update_word_state_initial(word_length)
-		elsif player1.is_a? ComputerPlayer
-			word = player1.choose_word
+		elsif player1.is_a?(HumanPlayer) && player2.is_a?(ComputerPlayer)
+			word_length = player1.set_word_length
+			update_word_state_initial(word_length)
+			player2.update_dictionary_initial(word_length)
+		elsif player1.is_a?(ComputerPlayer) && player2.is_a?(HumanPlayer)
+			self.word = player1.choose_word
 			update_word_state_initial(word.length)
+		elsif player1.is_a?(ComputerPlayer) && player2.is_a?(ComputerPlayer)
+			self.word = player1.choose_word
+			update_word_state_initial(word.length)
+			player2.update_dictionary_initial(word.length)
 		end
 
-		until winning_guess?(guess)
-			
+		play_game(player1, player2)
+	end
+
+	def play_game(player1, player2)
+		num_guesses = 0
+
+		while num_guesses < 10
+			puts self.word_state
+			self.guess = player2.make_guess
+			evaluation = player1.evaluate_guess(self.guess, self.word)
+
+			if evaluation == "no"
+				puts "That's not it"
+			elsif evaluation == "yes"
+				puts "GUESSER WINS"
+				break
+			else
+				update_word_state_with_indices(self.guess, evaluation)
+				unless self.word_state.split(//).include?("*")
+					puts "GUESSER WINS"
+					break
+				end
+			end
+
+			player2.update_dictionary_with_word_state(self.word_state) if player2.is_a? ComputerPlayer
+			num_guesses += 1
 		end
 	end
 
@@ -51,10 +87,7 @@ class Hangman
 		indices.each do |i|
 			self.word_state[i] = guess
 		end
-		self.word_state
 	end
-
-	def display_word_state
 
 end
 
@@ -76,22 +109,27 @@ class HumanPlayer
 	# Guess is single letter
 	# Ask if letter is in word
 	# Return locations or "no" if not included
-	def evaluate_guess(guess)
-		print "Is #{guess} included in your word?"
-		answer = gets.chomp
-		if answer == "no"
-			return "no"
-		elsif answer == "yes"
-			print "At what indices? (format '1 2 3') "
-			letter_locations = gets.chomp.split(" ").map {|i| i.to_i}
-			letter_locations
+	def evaluate_guess(guess, word)
+		if guess.length > 1
+			print "Is #{guess} your word? "
+			return gets.chomp
+		else
+			print "Is #{guess} included in your word? "
+			answer = gets.chomp
+			if answer == "no"
+				return "no"
+			elsif answer == "yes"
+				print "At what indices? (format '1 2 3') "
+				letter_locations = gets.chomp.split(" ").map {|i| i.to_i}
+				letter_locations
+			end
 		end
 	end
 
 	# Check winning guess when human is hangman (full word guesses)
-	def winning_guess?(guess)
+	def winning_guess?(guess, word)
 		# Accounts for guess being nil at beginning of game
-		return false if guess.nil?
+		return false if guess.nil? || guess.length < 2
 
 		print "Is #{guess} your word? "
 		answer = gets.chomp
@@ -106,13 +144,15 @@ end
 class ComputerPlayer
 	LETTERS = ("a".."z").to_a.map {|x| x.to_sym}
 
-	attr_accessor :word, :dictionary
+	attr_accessor :word, :dictionary, :letters_guessed
 
 
 	# Create dictionary from dictionary.txt file
 	def initialize
 		@dictionary = File.readlines("dictionary.txt").map {|word| word.strip}
 		@dictionary.map! {|word| word.gsub(/[^a-z]/, "")}
+
+		@letters_guessed = []
 	end
 
 	def choose_word
@@ -121,7 +161,7 @@ class ComputerPlayer
 
 	# Should be passed length of word
 	def update_dictionary_initial(length)
-		self.dictionry = self.dictionary.select do |word|
+		self.dictionary = self.dictionary.select do |word|
 			word.length == length
 		end
 	end
@@ -141,16 +181,28 @@ class ComputerPlayer
 	# Return guess
 	def make_guess
 		letter_occurrences = []
+		# letters_to_use = LETTERS.EACH {|letter| letter.to_s}
+		# letters_to_use -= letters_guessed
 
 		if self.dictionary.length > 1
 			LETTERS.each do |letter|
 				letter_count = 0
+
+				if letters_guessed.include?(letter)
+					letter_occurrences << letter_count
+					next
+				end
+				# next if letters_guessed.include?(letter)
 				self.dictionary.each do |word|
 					letter_count += word.count(letter.to_s)
 				end
 				letter_occurrences << letter_count
 			end
 			most_frequent = letter_occurrences.max
+
+
+
+			self.letters_guessed << LETTERS[letter_occurrences.index(most_frequent)].to_s
 			return LETTERS[letter_occurrences.index(most_frequent)].to_s
 		else
 			return self.dictionary[0]
@@ -160,8 +212,8 @@ class ComputerPlayer
 	# Guess is single letter
 	# Check if letter is in word
 	# Return locations or "no" if not included
-	def evaluate_guess(guess)
-		letters = self.word.split(//)
+	def evaluate_guess(guess, word)
+		letters = word.split(//)
 		letter_locations = []
 		letters.each_with_index do |letter, index|
 			if letter == guess
@@ -176,11 +228,11 @@ class ComputerPlayer
 	end
 
 	# Check winning guess when computer is hangman (full word guesses)
-	def winning_guess?(guess)
+	def winning_guess?(guess, word)
 		# Accounts for guess being nil at beginning of game
 		return false if guess.nil?
 
-		if guess == self.word
+		if guess == word
 			return true
 		else
 			return false
