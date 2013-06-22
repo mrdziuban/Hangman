@@ -5,6 +5,13 @@ end
 class HumanPlayer
 	attr_accessor :word, :word_state
 
+	# Prompt for a guess
+	# Return guess
+	def make_guess
+		print "Enter a letter or word to guess: "
+		gets.chomp
+	end
+
 	# Guess is single letter
 	# Ask if letter is in word
 	# Return locations or "no" if not included
@@ -33,6 +40,19 @@ end
 
 class ComputerPlayer
 	attr_accessor :word, :word_state
+
+
+	# Create dictionary from dictionary.txt file
+	def initialize
+		dictionary = File.readlines("dictionary.txt").map {|word| word.strip}
+		dictionary.map! {|word| word.gsub(/[^a-z]/, "")}
+	end
+
+	# Make a guess based on dictionary words
+	# Return guess
+	def make_guess
+
+	end
 
 	# Guess is single letter
 	# Check if letter is in word
