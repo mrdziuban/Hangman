@@ -60,7 +60,9 @@ class Hangman
 			evaluation = player1.evaluate_guess(self.guess, self.word)
 
 			if evaluation == "no"
-				puts "That's not it"
+				puts "That's not in the word"
+				player2.update_dictionary_remove_letter(self.guess) if player2.is_a? ComputerPlayer
+				num_guesses += 1
 			elsif evaluation == "yes"
 				puts "GUESSER WINS"
 				break
@@ -73,7 +75,6 @@ class Hangman
 			end
 
 			player2.update_dictionary_with_word_state(self.word_state) if player2.is_a? ComputerPlayer
-			num_guesses += 1
 		end
 	end
 
@@ -177,18 +178,25 @@ class ComputerPlayer
 		end
 	end
 
+	def update_dictionary_remove_letter(letter)
+		self.dictionary = self.dictionary.select do |word|
+			!word.split(//).include?(letter)
+		end
+	end
+
 	# Make a guess based on dictionary words
 	# Return guess
 	def make_guess
+		p self.dictionary
 		letter_occurrences = []
 		# letters_to_use = LETTERS.EACH {|letter| letter.to_s}
 		# letters_to_use -= letters_guessed
 
 		if self.dictionary.length > 1
-			LETTERS.each do |letter|
+			LETTERS.each_with_index do |letter|
 				letter_count = 0
 
-				if letters_guessed.include?(letter)
+				if letters_guessed.include?(letter.to_s)
 					letter_occurrences << letter_count
 					next
 				end
@@ -213,6 +221,11 @@ class ComputerPlayer
 	# Check if letter is in word
 	# Return locations or "no" if not included
 	def evaluate_guess(guess, word)
+		if guess.length > 1
+			return "yes" if guess == word
+			return "no" if guess != word
+		end
+
 		letters = word.split(//)
 		letter_locations = []
 		letters.each_with_index do |letter, index|
