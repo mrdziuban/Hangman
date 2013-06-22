@@ -31,9 +31,9 @@ class HumanPlayer
 		print "Is #{guess} your word?"
 		answer = gets.chomp
 		if answer == "yes"
-			return "GUESSER WINS"
+			return true
 		else
-			return "THAT'S NOT IT"
+			return false
 		end
 	end
 end
@@ -75,9 +75,9 @@ class ComputerPlayer
 	# Check winning guess when computer is hangman (full word guesses)
 	def winning_guess?(guess)
 		if guess == word
-			return "GUESSER WINS"
+			return true
 		else
-			return "THAT'S NOT IT"
+			return false
 	end
 end
 
