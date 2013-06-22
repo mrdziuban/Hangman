@@ -1,6 +1,35 @@
 class Hangman
 	attr_accessor :word_state, :guess
 
+	def initialize
+		print "How many human players? "
+		@game_type = gets.chomp.to_i
+
+		# Player 1 is ALWAYS hangman
+		# Player 2 is ALWAYS guesser
+		if @game_type == 0
+			player1 = HumanPlayer.new
+			player2 = HumanPlayer.new
+		elsif @game_type == 1
+			print "Who should be the hangman, computer or human? "
+			hanger = gets.chomp
+			if hanger == "human"
+				player1 = HumanPlayer.new
+				player2 = ComputerPlayer.new
+			else
+				player1 == ComputerPlayer.new
+				player2 == HumanPlayer.new
+			end
+		elsif @game_type == 2
+			player1 = ComputerPlayer.new
+			player2 = ComputerPlayer.new
+		end
+	end
+
+	def play_game
+		until winning_guess?(guess)
+	end
+
 	# Sets word_state at beginning of game based on word length
 	def update_word_state_initial(length)
 		self.word_state = "*" * length
@@ -17,7 +46,7 @@ class Hangman
 end
 
 class HumanPlayer
-	attr_accessor :word, :word_state
+	attr_accessor :word
 
 	# Prompt for a guess
 	# Return guess
@@ -47,7 +76,10 @@ class HumanPlayer
 
 	# Check winning guess when human is hangman (full word guesses)
 	def winning_guess?(guess)
-		print "Is #{guess} your word?"
+		# Accounts for guess being nil at beginning of game
+		return false if guess.nil?
+
+		print "Is #{guess} your word? "
 		answer = gets.chomp
 		if answer == "yes"
 			return true
@@ -60,13 +92,31 @@ end
 class ComputerPlayer
 	LETTERS = ("a".."z").to_a.map {|x| x.to_sym}
 
-	attr_accessor :word, :word_state, :dictionary
+	attr_accessor :word, :dictionary
 
 
 	# Create dictionary from dictionary.txt file
 	def initialize
 		@dictionary = File.readlines("dictionary.txt").map {|word| word.strip}
 		@dictionary.map! {|word| word.gsub(/[^a-z]/, "")}
+	end
+
+	# Should be passed length of word
+	def update_dictionary_initial(length)
+		self.dictionry = self.dictionary.select do |word|
+			word.length == length
+		end
+	end
+
+	# Update to words matching letters in word_state
+	def update_dictionary_with_word_state(word_state)
+		self.dictionary = self.dictionary.select do |word|
+			word_match = true
+			(0..word.length).each do |index|
+				word_match = false if word[index] != word_state[index] && word_state[index] != "*"
+			end
+			word_match
+		end
 	end
 
 	# Make a guess based on dictionary words
@@ -109,6 +159,9 @@ class ComputerPlayer
 
 	# Check winning guess when computer is hangman (full word guesses)
 	def winning_guess?(guess)
+		# Accounts for guess being nil at beginning of game
+		return false if guess.nil?
+
 		if guess == self.word
 			return true
 		else
