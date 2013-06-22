@@ -1,4 +1,18 @@
 class Hangman
+	attr_accessor :word_state, :guess
+
+	# Sets word_state at beginning of game based on word length
+	def update_word_state_initial(length)
+		self.word_state = "*" * length
+	end
+
+	# Should be passed value from evaluate_guess
+	def update_word_state_with_indices(guess, indices)
+		indices.each do |i|
+			self.word_state[i] = guess
+		end
+		self.word_state
+	end
 
 end
 
@@ -10,6 +24,11 @@ class HumanPlayer
 	def make_guess
 		print "Enter a letter or word to guess: "
 		gets.chomp
+	end
+
+	def set_word_length
+		print "How long is your word? "
+		gets.chomp.to_i
 	end
 
 	# Guess is single letter
@@ -54,6 +73,7 @@ class ComputerPlayer
 	# Return guess
 	def make_guess
 		letter_occurrences = []
+
 		if self.dictionary.length > 1
 			LETTERS.each do |letter|
 				letter_count = 0
@@ -89,11 +109,21 @@ class ComputerPlayer
 
 	# Check winning guess when computer is hangman (full word guesses)
 	def winning_guess?(guess)
-		if guess == word
+		if guess == self.word
 			return true
 		else
 			return false
 	end
 end
 
-# Check for winning guess if guess.length > 1
+# Human is hangman, computer is guesser
+# Human thinks of word
+# Human inputs word length
+# Word state is set to "_" * word.length
+# Computer updates dictionary to words of same length
+# Computer makes guess
+# Human evaluates guess
+# Word state is updated to include correct letters
+# Computer updates dictionary to words matching current word state
+# Computer makes guess
+# etc.
