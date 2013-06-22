@@ -39,19 +39,34 @@ class HumanPlayer
 end
 
 class ComputerPlayer
-	attr_accessor :word, :word_state
+	LETTERS = ("a".."z").to_a.map {|x| x.to_sym}
+
+	attr_accessor :word, :word_state, :dictionary
 
 
 	# Create dictionary from dictionary.txt file
 	def initialize
-		dictionary = File.readlines("dictionary.txt").map {|word| word.strip}
-		dictionary.map! {|word| word.gsub(/[^a-z]/, "")}
+		@dictionary = File.readlines("dictionary.txt").map {|word| word.strip}
+		@dictionary.map! {|word| word.gsub(/[^a-z]/, "")}
 	end
 
 	# Make a guess based on dictionary words
 	# Return guess
 	def make_guess
-
+		letter_occurrences = []
+		if self.dictionary.length > 1
+			LETTERS.each do |letter|
+				letter_count = 0
+				self.dictionary.each do |word|
+					letter_count += word.count(letter.to_s)
+				end
+				letter_occurrences << letter_count
+			end
+			most_frequent = letter_occurrences.max
+			return LETTERS[letter_occurrences.index(most_frequent)].to_s
+		else
+			return self.dictionary[0]
+		end
 	end
 
 	# Guess is single letter
