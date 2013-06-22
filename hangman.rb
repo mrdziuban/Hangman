@@ -2,6 +2,7 @@ class Hangman
 	attr_accessor :word_state, :guess
 
 	def initialize
+		@guess = nil
 		print "How many human players? "
 		@game_type = gets.chomp.to_i
 
@@ -27,7 +28,17 @@ class Hangman
 	end
 
 	def play_game
+		if player1.is_a? HumanPlayer
+			word_length = player1.set_word_length
+			update_word_state_initial(word_length)
+		elsif player1.is_a? ComputerPlayer
+			word = player1.choose_word
+			update_word_state_initial(word.length)
+		end
+
 		until winning_guess?(guess)
+			
+		end
 	end
 
 	# Sets word_state at beginning of game based on word length
@@ -42,6 +53,8 @@ class Hangman
 		end
 		self.word_state
 	end
+
+	def display_word_state
 
 end
 
@@ -70,8 +83,9 @@ class HumanPlayer
 			return "no"
 		elsif answer == "yes"
 			print "At what indices? (format '1 2 3') "
-		letter_locations = gets.chomp.split(" ").map {|i| i.to_i}
-		letter_locations
+			letter_locations = gets.chomp.split(" ").map {|i| i.to_i}
+			letter_locations
+		end
 	end
 
 	# Check winning guess when human is hangman (full word guesses)
@@ -99,6 +113,10 @@ class ComputerPlayer
 	def initialize
 		@dictionary = File.readlines("dictionary.txt").map {|word| word.strip}
 		@dictionary.map! {|word| word.gsub(/[^a-z]/, "")}
+	end
+
+	def choose_word
+		self.dictionary.sample
 	end
 
 	# Should be passed length of word
@@ -166,6 +184,7 @@ class ComputerPlayer
 			return true
 		else
 			return false
+		end
 	end
 end
 
