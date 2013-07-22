@@ -1,10 +1,9 @@
-require 'debugger'
-
 class Hangman
-	attr_accessor :word_state, :guess, :player1, :player2, :word
+	attr_accessor :word_state, :guess, :player1, :player2, :word, :guessed_letters
 
 	def initialize
 		@guess = nil
+		@guessed_letters = []
 		print "How many human players? "
 		@game_type = gets.chomp.to_i
 
@@ -53,16 +52,21 @@ class Hangman
 
 	def play_game(player1, player2)
 		num_guesses = 0
+		turns_left = 10
 
 		while num_guesses < 10
-			puts self.word_state
+			puts "#{self.word_state}"
+			puts "Guessed: #{@guessed_letters}" unless @guessed_letters.empty?
+			puts "Turns left: #{turns_left}"
 			self.guess = player2.make_guess
+			@guessed_letters << self.guess
 			evaluation = player1.evaluate_guess(self.guess, self.word)
 
 			if evaluation == "no"
 				puts "That's not in the word"
 				player2.update_dictionary_remove_letter(self.guess) if player2.is_a? ComputerPlayer
 				num_guesses += 1
+				turns_left -= 1
 			elsif evaluation == "yes"
 				puts "GUESSER WINS"
 				break
@@ -184,13 +188,10 @@ class ComputerPlayer
 		end
 	end
 
-	# Make a guess based on dictionary words
-	# Return guess
+	# Make a guess based on frequency of letters in dictionary words
 	def make_guess
-		p self.dictionary
+		# p self.dictionary
 		letter_occurrences = []
-		# letters_to_use = LETTERS.EACH {|letter| letter.to_s}
-		# letters_to_use -= letters_guessed
 
 		if self.dictionary.length > 1
 			LETTERS.each_with_index do |letter|
@@ -252,15 +253,3 @@ class ComputerPlayer
 		end
 	end
 end
-
-# Human is hangman, computer is guesser
-# Human thinks of word
-# Human inputs word length
-# Word state is set to "_" * word.length
-# Computer updates dictionary to words of same length
-# Computer makes guess
-# Human evaluates guess
-# Word state is updated to include correct letters
-# Computer updates dictionary to words matching current word state
-# Computer makes guess
-# etc.
