@@ -190,7 +190,6 @@ class ComputerPlayer
 
 	# Make a guess based on frequency of letters in dictionary words
 	def make_guess
-		# p self.dictionary
 		letter_occurrences = []
 
 		if self.dictionary.length > 1
@@ -252,4 +251,8 @@ class ComputerPlayer
 			return false
 		end
 	end
+end
+
+if __FILE__ == $PROGRAM_NAME
+	Hangman.new
 end
